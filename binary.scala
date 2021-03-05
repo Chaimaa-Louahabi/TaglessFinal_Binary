@@ -1,71 +1,73 @@
-/*binary = |One * Option(binary)
-           |Zero * Option(binary)
+/*binary = |One * binary
+           |Zero * binary
+           |Nil
+            
 */
-
-/*Scala Int : 32 bit signed value. Range -2147483648 to 2147483647
-this ADT is only for positif integers
-*/
-
 
 
 trait Binary {
 
-    /*Convert a scala integer to Binary */
-    def toBinary(dec: Int) : Binary = {
-        def toBinary(decimal: Int, bin: Binary) : Binary = {
-            decimal match {
-            case 0 => bin
-            case _ => 
-                if (decimal%2 == 0) {
-                    toBinary(decimal/2, Zero(Some(bin)))
-                } else {
-                    toBinary(decimal/2, One(Some(bin)))
-                }
-            }
-        }
-        if (dec%2 == 0) {
-            toBinary(dec, Zero(None))
-        } else {
-            toBinary(dec, One(None))
-        }
-    }
-
-    /*Convert a binary to a scala integer*/
-    def toDecimal(bin: Binary) : Int = {
-        def toDecimal(bin: Binary, n: Int) : Int = bin match {
-            case One(None) => 1
-            case Zero(None) => 0
-            case One(Some(next)) => (1 << (n-1)) + toDecimal(next, n-1)//scala.math.pow returns a double :(
-            case Zero(Some(next)) => toDecimal(next, n-1)
-        }
-        toDecimal(bin, bin.size)
-    }
-
-     private def size: Int = this match {
-        case Zero(Some(next)) => 1 + next.size
-        case One(Some(next)) => 1 + next.size
-        case Zero(None) => 1
-        case One(None) => 1
-    }
-
 }
-case class One(next: Option[Binary]) extends Binary
-case class Zero(next: Option[Binary]) extends Binary
+case class One(next: Binary) extends Binary
+case class Zero(next: Binary) extends Binary
+case class Nil() extends Binary
 
 object test {
 
+    /*Convert a scala integer to Binary */
+    def int2bin(dec: Int) : Binary = {
+        def toBinary(decimal: Int, rightBin: Binary) : Binary = {
+            decimal match {
+            case 0 => rightBin
+            case _ => 
+                if (decimal%2 == 0) {
+                    toBinary(decimal/2, Zero(rightBin))
+                } else {
+                    toBinary(decimal/2, One(rightBin))
+                }
+            }
+        }
+            if (dec == 0 ) 
+                Zero(Nil())
+             else
+                toBinary(dec,Nil())
+
+        
+    }
+
+    /*Convert a binary to a scala integer*/
+    def bin2int(bin: Binary) : Int = {
+        def toDecimal(bin: Binary, len: Int) : Int = bin match {
+            case One(Nil()) => 1
+            case Zero(Nil()) => 0
+            case One(next) => (1 << (len-1)) + toDecimal(next, len-1)//scala.math.pow returns a double :(
+            case Zero(next) => toDecimal(next, len-1)
+        }
+        toDecimal(bin, size(bin))
+    }
+
+     private def size(bin : Binary): Int = bin match {
+        case Zero(next) => 1 + size(next)
+        case One(next) => 1 + size(next)
+        case Nil() => 0
+    }
+
     def main(args: Array[String]) : Unit = {
         //test case 1
-        val bin1 : Binary= One(Some(One(Some(Zero(None)))))
-        val dec1 : Int = bin1.toDecimal(bin1)
-        assert(dec1 == 6)
+        val bin110 : Binary= One(One(Zero(Nil())))
+
+        assert(bin2int(bin110) == 6 )
         //test case 2
-        val bin2 : Binary= Zero(Some(Zero(None)))
-        val dec2 : Int = bin2.toDecimal(bin2)
-        assert(dec2 == 0)
-        
-        //val bin2bis :Binary= dec2.toBinary(dec2)
-        //assert(bin2 == bin2bis)
+        val bin00 : Binary = Zero(Zero(Nil()))
+        assert(bin2int(bin00) == 0)
+        //test case 3
+        val _bin00 :Binary= int2bin(0)
+        assert(_bin00== Zero(Nil()))
+
+        //make sure that forall x : bin2int(int2bin(x)) = x
+        assert(bin2int(int2bin(310)) == 310)
+        //make sure that forall x : int2bin(bin2int(x)) = x
+        assert( int2bin(bin2int( bin110 )) == bin110 )
 
     }
 }
